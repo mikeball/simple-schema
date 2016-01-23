@@ -2,6 +2,28 @@
   (:require [clojure.test :refer :all]
             [simple-schema.core :refer :all]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+
+(deftest declared-parameters-and-returns-are-required
+  (is (thrown? Exception (breakout-signature [])))
+  (is (thrown? Exception (breakout-signature ['=>])))
+  (is (thrown? Exception (breakout-signature ['+s]))))
+
+
+(deftest signatures-are-broken-out
+  (are [given expected]
+       (= (breakout-signature given) expected)
+
+       '[=> +person +nil]
+       '[() (+person +nil)]
+
+       '[+s +i => +person +nil]
+       '[(+s +i) (+person +nil)]
+
+       ))
+
+
+
+;; (run-tests *ns*)
+
+
+

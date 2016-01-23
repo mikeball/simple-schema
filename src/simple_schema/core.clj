@@ -1,5 +1,33 @@
+;; taoclj.simple-schema
 (ns simple-schema.core
   (:require [clojure.string :as string]))
+
+
+
+
+(defn breakout-signature [params]
+  (let [arrow-at (.indexOf params '=>)]
+    (cond (= arrow-at -1)
+          (throw (Exception. "Parameter declaration must contain =>"))
+
+          :default
+          (let [input (take arrow-at params)
+                result (drop (+ arrow-at 1) params)]
+
+            (if (= 0 (count result))
+              (throw (Exception. "You must declare at least 1 return type!"))
+
+              [input result])))))
+
+
+(comment
+  (breakout-signature ['=> '+person '+nil])
+  (breakout-signature ['+s '=> '+person '+nil])
+  (breakout-signature [])
+  (breakout-signature [+s])
+)
+
+
 
 
 
@@ -39,9 +67,9 @@
 ;; (value-check "" [:required [:len 3 5]])
 
 ;; syntax ideas...
-;; (value-check "" +required)
-;; (value-check "" (+len 3 5))
-;; (value-check 1 +positive)
+;; (value-check "" required+)
+;; (value-check "" (len+ 3 5))
+;; (value-check 1 positive+)
 ;; (value-check 1 (+range 3 5) (+in 1 2 5))
 
 
@@ -102,9 +130,19 @@
 ;; (some true? (map #(check % "") [+s +b]))
 
 
+
+
+
+
 (defmacro defn+ [fn-name params returns & body]
   ; params and returns must be a vector of symbols
 
+
+  ; determined at def-time I think...
+  ; (.get *run-schema-checks*)
+
+
+  ; runtime
   (let [param-syms  (apply vector (map compile-param-name params))
         param-names (apply vector (map str param-syms))
         param-check '(fn [ptype pvalue pname]
@@ -123,6 +161,8 @@
             (if (some true? (map #(check % ~result) ~returns))
               ~result
               (throw (IllegalArgumentException.
+
+                                   ; need to list out the valid return types
                                    (str "Return type is not valid!")))
 
               ))
@@ -134,10 +174,45 @@
 ;;     (str "hi " s)))
 
 
+
+
+
+;; (defn+ hello [+i >> +person]
+;;   (str "hi " s " number " i))
+
+
+
+
+
+
+;; (def +people (sequence-of +person))
+
+
+;; (defn+ load-all [=> +people]
+;;   (-> db
+;;       (select :people {})))
+
+
+;; (defn+ load-by-id [+i => +person +nil]
+;;   (-> db
+;;       (select1 :people {:id i})))
+
+
+;; (defn+ load-by-mail [+email => +person +nil]
+;;   (-> db
+;;       (select1 :people {:email email})))
+
+
+
+
+
+
+
+
 ;; (defn+ hello [+s +i][+s]
 ;;   (str "hi " s " number " i))
 
-;; (hello "bob" 222)
+;; (hello "bob" 2)
 ;; (hello "bob" 333)
 
 
@@ -145,6 +220,24 @@
 ;;   "444")
 
 ;; (hello2 "" 2)
+
+
+
+; requred => (fn [val] non-empty string checked, otherwise refurn truthy)
+; (length 3 50) => (fn [val] checks length for string)
+;
+
+
+
+;; (def +person {:first [+s required [len 3 5]]
+;;               :last  [+s required]
+;;               :age    +i })
+
+
+;; (defn+ lookup [+i][+person]
+;;   {:first "bob" :last "barker" :age 77})
+
+;; (lookup 1)
 
 
 
